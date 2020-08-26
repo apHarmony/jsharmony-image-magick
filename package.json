@@ -1,0 +1,21 @@
+{
+  "name": "jsharmony-image-magick",
+  "version": "1.0.0",
+  "description": "jsHarmony Image Extension for ImageMagick",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "jsHarmony",
+    "Image",
+    "Extension",
+    "Magick",
+    "GM",
+    "ImageMagick"
+  ],
+  "author": "apHarmony <contact@apharmony.com> (http://www.apharmony.com/)",
+  "license": "LGPL-3.0",
+  "dependencies": {
+  }
+}
