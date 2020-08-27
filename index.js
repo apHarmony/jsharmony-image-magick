@@ -48,6 +48,10 @@ exports.driver = function(){
   return imagick;
 }
 
+exports.getDriver = function(cb){
+  return cb(null, exports.driver());
+}
+
 exports.resample = function(src, dest, format, callback){
   var img = imagick(src);
   img.size(function (err, size) {

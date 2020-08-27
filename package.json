@@ -1,6 +1,6 @@
 {
   "name": "jsharmony-image-magick",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "jsHarmony Image Extension for ImageMagick",
   "main": "index.js",
   "scripts": {
