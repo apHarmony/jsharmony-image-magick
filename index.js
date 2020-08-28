@@ -20,9 +20,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 var _ = require('lodash');
 var fs = require('fs');
 
-var imagick = require('gm').subClass({ imageMagick: true });
+var gm = require('gm');
+var imagick = gm.subClass({ imageMagick: true });
 
 exports = module.exports = {};
+
+exports.type = 'jsharmony-image-magick';
 
 function copyFile(source, target, cb) {
   var cbCalled = false;
@@ -49,7 +52,7 @@ exports.driver = function(){
 }
 
 exports.getDriver = function(cb){
-  return cb(null, exports.driver());
+  return cb(null, exports.driver(), { gm: gm });
 }
 
 exports.resample = function(src, dest, format, callback){
@@ -84,11 +87,26 @@ exports.crop = function(src, dest, destsize, format, callback){
     var size = info.size;
     if(!size) return callback(new Error('Could not find image dimensions'));
 
-    var srcformat = (info.format || '').toString().toLowerCase();
-    if(srcformat=='svg') img.density(Math.max(destsize[0], destsize[1]));
+    var dstWidth = destsize[0];
+    var dstHeight = destsize[1];
+    var dstParams = {
+      resize: true,
+      x: 0,
+      y: 0,
+      trim: false,
+    };
+    if(destsize.length > 2) dstParams = _.extend(dstParams, destsize[2]);
 
-    var cropw = destsize[0];
-    var croph = destsize[1];
+    dstParams.x = dstParams.x || 0;
+    dstParams.y = dstParams.y || 0;
+    dstWidth = dstWidth || (size.width - dstParams.x);
+    dstHeight = dstHeight || (size.height - dstParams.y);
+
+    var srcformat = (info.format || '').toString().toLowerCase();
+    if(srcformat=='svg') img.density(Math.max(dstWidth, dstHeight));
+
+    var cropw = dstWidth;
+    var croph = dstHeight;
     var outerw = cropw;
     var outerh = croph;
     if ((size.width / cropw) > (size.height / croph)) {
@@ -106,8 +124,15 @@ exports.crop = function(src, dest, destsize, format, callback){
     }
     img.quality(90);
     img.autoOrient();
-    img.resize(outerw, outerh);
-    img.crop(cropw, croph, cropx, cropy);
+
+    if(dstParams.resize){
+      img.resize(outerw, outerh);
+      img.crop(cropw, croph, cropx, cropy);
+    }
+    else {
+      img.crop(dstWidth, dstHeight, dstParams.x, dstParams.y);
+    }
+    if(dstParams.trim) img.trim();
     img.repage(0, 0, 0, 0);
     img.noProfile().write(dest, function (err) {
       if (err) return callback(err);
