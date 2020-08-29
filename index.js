@@ -41,6 +41,11 @@ function copyFile(source, target, cb) {
   }
 };
 
+function execif(cond, apply, f){
+  if (cond) apply(f);
+  else f();
+};
+
 exports.init = function(callback){
   imagick(100,100,'white').setFormat('PNG').toBuffer(function(err,b){
     return callback(err);
@@ -179,6 +184,56 @@ exports.resize = function(src, dest, destsize, format, callback){
     img.noProfile().write(dest, function (err) {
       if (err) return callback(err);
       return callback(null);
+    });
+  });
+}
+
+exports.compare = function(src1, src2, options, callback /* (err, isEqual, equality) */){
+  options = _.extend({
+    diff: null,
+    tolerance: 0.05,
+  }, options);
+
+  var img1 = imagick(src1);
+  var img2 = imagick(src2);
+
+  var isEqual = true;
+  var equality = 1;
+
+  img1.size(function (err, size1){
+    if(err) return callback(err, false, 0);
+    img2.size(function (err, size2){
+      if(err) return callback(err, false, 0);
+
+      if(size1.width != size2.width){ isEqual = false; equality = 0; }
+      if(size1.height != size2.height){ isEqual = false; equality = 0; }
+
+      if(!options.diff && !isEqual) return callback(null, isEqual, equality);
+
+      execif(options.diff,
+        function(f){
+          copyFile(src2, options.diff, function(err){
+            if(err) return callback(err);
+            return f();
+          });
+        },
+        function(){
+          var imgdiff = imagick().command('magick').in('compare').in('-metric').in('AE').in('-fuzz').in(options.tolerance*100+'%').in(src1).in(src2);
+          if(options.diff) imgdiff.out(options.diff);
+          imgdiff.stream(function(err, stdout, stderr){
+            if(err) return callback(err);
+
+            var rslt = '';
+            stderr.on('data', function(data){ rslt += data.toString(); });
+            stdout.on('end', function(){
+              equality = parseFloat(rslt);
+              if(isNaN(equality)) return callback(str);
+              if(isEqual) isEqual = (equality < options.tolerance);
+              return callback(null, isEqual, equality);
+            });
+          });
+        }
+      );
     });
   });
 }
