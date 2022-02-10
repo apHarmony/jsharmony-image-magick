@@ -30,40 +30,40 @@ exports.type = 'jsharmony-image-magick';
 function copyFile(source, target, cb) {
   var cbCalled = false;
   var rd = fs.createReadStream(source);
-  rd.on("error", done);
+  rd.on('error', done);
   var wr = fs.createWriteStream(target);
-  wr.on("error", done);
-  wr.on("close", function (ex) { done(); });
+  wr.on('error', done);
+  wr.on('close', function (ex) { done(); });
   rd.pipe(wr);
   
   function done(err) {
     if (!cbCalled) { if (typeof err == 'undefined') err = null; cb(err); cbCalled = true; }
   }
-};
+}
 
 function execif(cond, apply, f){
   if (cond) apply(f);
   else f();
-};
+}
 
 exports.init = function(callback){
   imagick(100,100,'white').setFormat('PNG').toBuffer(function(err,b){
     return callback(err);
   });
-}
+};
 
 exports.driver = function(){
   return imagick;
-}
+};
 
 exports.getDriver = function(cb){
   return cb(null, exports.driver(), { gm: gm });
-}
+};
 
 exports.resample = function(src, dest, format, callback){
   var img = imagick(src);
   img.size(function (err, size) {
-    if (err) return opcallback(err);
+    if (err) return callback(err);
     if (format) {
       img.setFormat(format);
       if (_.includes(['jpeg', 'jpg'], format)) img.flatten();
@@ -81,7 +81,7 @@ exports.resample = function(src, dest, format, callback){
 exports.size = function(src, callback){
   var img = imagick(src);
   img.size(callback); //err, size
-}
+};
 
 exports.crop = function(src, dest, destsize, format, callback){
   //Calculate w/h + x/y
@@ -144,7 +144,7 @@ exports.crop = function(src, dest, destsize, format, callback){
       return callback(null);
     });
   });
-}
+};
 
 exports.resize = function(src, dest, destsize, format, callback){
   var img = imagick(src);
@@ -186,7 +186,7 @@ exports.resize = function(src, dest, destsize, format, callback){
       return callback(null);
     });
   });
-}
+};
 
 exports.compare = function(src1, src2, options, callback /* (err, isEqual, equality) */){
   options = _.extend({
@@ -227,7 +227,7 @@ exports.compare = function(src1, src2, options, callback /* (err, isEqual, equal
             stderr.on('data', function(data){ rslt += data.toString(); });
             stdout.on('end', function(){
               equality = parseFloat(rslt);
-              if(isNaN(equality)) return callback(str);
+              if(isNaN(equality)) return callback(new Error('Invalid comparison result: '+rslt));
               if(isEqual) isEqual = (equality < options.tolerance);
               return callback(null, isEqual, equality);
             });
@@ -236,4 +236,4 @@ exports.compare = function(src1, src2, options, callback /* (err, isEqual, equal
       );
     });
   });
-}
+};
